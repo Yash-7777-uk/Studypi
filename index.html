@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study PI</title>
+  <style>
+    /* Basic Styling */
+    body {
+      background-color: #1d1f27;
+      color: #f5f5f7;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #2a2d35;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      color: #e91e63;
+      display: flex;
+      align-items: center;
+    }
+    header h1 img {
+      width: 35px; /* Logo size next to Study PI */
+      height: 35px;
+      margin-right: 10px;
+      border-radius: 50%;
+    }
+    nav {
+      display: flex;
+      align-items: center;
+    }
+    nav img {
+      width: 40px;  /* Increased size of Telegram logo */
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    nav a {
+      color: #f5f5f7;
+      margin: 0 10px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+    }
+    .container {
+      padding: 20px;
+    }
+    .item {
+      background-color: #2d2f38;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    .item img {
+      width: 50px;
+      height: 50px;
+      margin-right: 10px;
+      border-radius: 5px;
+    }
+    .content-title {
+      font-size: 20px;
+      color: #e91e63;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>
+    <img src="https://ar-hosting.pages.dev/1732986037894.jpg" alt="Logo"> <!-- Logo next to Study PI -->
+    Study PI
+  </h1>
+  <nav>
+    <a href="https://t.me/SDV_bots" target="_blank">
+      <img src="https://ar-hosting.pages.dev/1732985089840.jpg" alt="Telegram Logo">
+      
+    </a>
+  </nav>
+</header>
+
+<section id="main-content" class="container">
+  <!-- Dynamic content will be loaded here -->
+</section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    loadBatches(); // Load batch list on page load
+  });
+
+  const mainContent = document.getElementById('main-content');
+
+  function showSkeletonLoader(className, count) {
+    mainContent.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const skeleton = document.createElement('div');
+      skeleton.className = `skeleton ${className}`;
+      mainContent.appendChild(skeleton);
+    }
+  }
+
+  // 1. Load Batches
+  function loadBatches() {
+    showSkeletonLoader('batch-skeleton', 3);
+    fetch('https://akapi.onrender.com/api/spec.apnikaksha.net/11/my-batch')
+      .then(response => response.json())
+      .then(data => {
+        if (data.responseCode === 200) {
+          displayBatches(data.data.batchData);
+        }
+      })
+      .catch(error => console.error('Error fetching batches:', error));
+  }
+
+  function displayBatches(batches) {
+    mainContent.innerHTML = '<h2 class="content-title">Batches</h2>';
+    batches.forEach(batch => {
+      const batchItem = document.createElement('div');
+      batchItem.className = 'item';
+      batchItem.onclick = () => loadSubjects(batch.id);
+      batchItem.innerHTML = `
+        <img src="${batch.imageUrl}" alt="${batch.batchName}">
+        <div>
+          <h3>${batch.batchName}</h3>
+          <p>${batch.instructorName}</p>
+        </div>
+      `;
+      mainContent.appendChild(batchItem);
+    });
+  }
+
+  // 2. Load Subjects
+  function loadSubjects(batchId) {
+    showSkeletonLoader('subject-skeleton', 3);
+    fetch(`https://akapi.onrender.com/api/spec.apnikaksha.net/11/batch-subject/${batchId}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.responseCode === 200) {
+          displaySubjects(data.data.batch_subject, batchId);
+        }
+      })
+      .catch(error => console.error('Error fetching subjects:', error));
+  }
+
+  function displaySubjects(subjects, batchId) {
+    mainContent.innerHTML = '<h2 class="content-title">Subjects</h2>';
+    subjects.forEach(subject => {
+      const subjectItem = document.createElement('div');
+      subjectItem.className = 'item';
+      subjectItem.onclick = () => loadTopics(subject.id, batchId);
+      subjectItem.innerHTML = `<h3>${subject.subjectName}</h3>`;
+      mainContent.appendChild(subjectItem);
+    });
+  }
+
+  // 3. Load Topics
+  function loadTopics(subjectId, batchId) {
+    showSkeletonLoader('topic-skeleton', 3);
+    fetch(`https://akapi.onrender.com/api/spec.apnikaksha.net/11/batch-topic/${subjectId}?type=class`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.responseCode === 200) {
+          displayTopics(data.data.batch_topic, batchId, subjectId);
+        }
+      })
+      .catch(error => console.error('Error fetching topics:', error));
+  }
+
+  // Updated displayTopics function to link to show.html
+  function displayTopics(topics, batchId, subjectId) {
+    mainContent.innerHTML = '<h2 class="content-title">Topics</h2>';
+    topics.forEach(topic => {
+      const topicItem = document.createElement('div');
+      topicItem.className = 'item';
+      topicItem.onclick = () => {
+        // Redirect to show.html with batchId, subjectId, and topicId as URL parameters
+        window.location.href = `show.html?batchId=${batchId}&subjectId=${subjectId}&topicId=${topic.id}`;
+      };
+      topicItem.innerHTML = `<h3>${topic.topicName}</h3><p>Classes: ${topic.clsCount}</p>`;
+      mainContent.appendChild(topicItem);
+    });
+  }
+</script>
+
+</body>
+</html>

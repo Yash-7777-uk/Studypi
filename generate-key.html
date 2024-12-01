@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generate Key</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      position: relative;
+    }
+    .container {
+      background: rgba(0, 0, 0, 0.54); /* Black transparent smoke background */
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      position: relative;  /* Ensure content is above the canvas */
+      z-index: 2;
+      backdrop-filter: blur(10px); /* Optional: Apply blur effect behind the container */
+    }
+    h2 {
+      color: #fff;  /* White text for the heading */
+    }
+    p {
+      color: #ccc;  /* Light gray for the paragraph */
+    }
+    #generateKey {
+      background-color: #448EE4; /* Blue button color */
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    #generateKey:hover {
+      background-color: #357ac9;
+    }
+    .loading {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #ccc;  /* Light gray for loading text */
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="bgCanvas"></canvas> <!-- 3D Background Canvas -->
+
+  <div class="container">
+    <h2>Get Access to Study-UK</h2>
+    <p>Click the button below to generate your access key.</p>
+    <button id="generateKey">Generate Key</button>
+    <p class="loading" id="loadingMessage" style="display: none;">Generating URL, please wait...</p>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // 3D Background Animation
+    const canvas = document.getElementById('bgCanvas');
+    const renderer = new THREE.WebGLRenderer({ canvas });
+
+    // Scene and camera setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 100;
+
+    // Lighting for realism
+    const ambientLight = new THREE.AmbientLight(0x5c002f, 0.6);  // Dark pink light
+    const pointLight = new THREE.PointLight(0x5c002f, 1); // Dark pink light
+    pointLight.position.set(50, 50, 50);
+    scene.add(ambientLight, pointLight);
+
+    // Pages (thin planes flipping)
+    const pageGeometry = new THREE.PlaneGeometry(39, 29);
+    const pageMaterial = new THREE.MeshBasicMaterial({ color: 0x5c002f, side: THREE.DoubleSide });
+    const pages = [];
+
+    for (let i = 0; i < 10; i++) {
+      const page = new THREE.Mesh(pageGeometry, pageMaterial);
+      page.position.z = -i * 0.1;
+      scene.add(page);
+      pages.push(page);
+    }
+
+    // Complex Pattern - Particles
+    const particlesCount = 6000;
+    const particlesGeometry = new THREE.BufferGeometry();
+    const particlesMaterial = new THREE.PointsMaterial({ color: 0x5c002f, size: 0.8 });
+
+    const positions = new Float32Array(particlesCount * 3);
+    for (let i = 0; i < particlesCount * 3; i++) {
+      positions[i] = (Math.random() - 0.8) * 400;  // Larger space for spreading
+    }
+
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+    scene.add(particlesMesh);
+
+    // Animation function for flipping pages and moving particles smoothly
+    let pageFlipSpeed = 0.03;
+    let particlesRotationSpeed = 0.0015;
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Smooth Page Flipping
+      pages.forEach((page, index) => {
+        page.rotation.y += pageFlipSpeed * (index + 1);
+        page.rotation.y %= Math.PI * 2;  // Loop the rotation
+      });
+
+      // Rotate particles
+      particlesMesh.rotation.y += particlesRotationSpeed;
+      particlesMesh.rotation.x += particlesRotationSpeed / 2;
+
+      // Render the scene
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // Key Generation Script
+    document.getElementById('generateKey').addEventListener('click', function() {
+      const apiKey = '86ca3b5aeb9d57e7a1bdf1c4129bb86eea7dfce6';
+      const destinationUrl = 'https://yourdomain/login-success.html';
+      const alias = 'studypixyz';
+      const apiUrl = `https://modijiurl.com/api?api=${apiKey}&url=${encodeURIComponent(destinationUrl)}&alias=${alias}&format=json`;
+
+      document.getElementById('loadingMessage').style.display = 'block';
+
+      fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);  // Check the response object in the console
+          if (data.status === 'success') {
+            const shortenedUrl = data.shortenedUrl || data.shorturl || data.link; // Adjust as per actual response
+            if (shortenedUrl) {
+              const now = new Date();
+              const expirationTime = now.getTime() + 10 * 60 * 1000; // 10 minutes
+              document.cookie = "keyGenerated=true; expires=" + new Date(expirationTime).toUTCString() + "; path=/";
+              window.location.href = shortenedUrl;
+            } else {
+              alert('Shortened URL field missing in response.');
+            }
+          } else {
+            alert('Error in generating URL: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('URL generate karne mein problem aayi hai.');
+        })
+        .finally(() => {
+          document.getElementById('loadingMessage').style.display = 'none';
+        });
+    });
+  </script>
+
+</body>
+</html>
